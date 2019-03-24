@@ -7,6 +7,7 @@ Usage:
   redis-look-monitor.py
     --host,-h <host>                      (default: localhost)
     --port,-p <port>                      (default: 6379)
+    --auth,-a <auth>                      (default: '')
     --estimate-throughput,-e              (default: false)
     --estimate-throughput-limit,-l <num>  (default: 1000)
     --input-file <filename>               (default: None)

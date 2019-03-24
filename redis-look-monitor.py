@@ -17,16 +17,16 @@ import redis
 def humanbytes(value, include_bytes=False):
     kilo, mega = 1024, 1024 ** 2
     if include_bytes and value < kilo:
-        return '{}B'.format(value)
+        return '{0}B'.format(value)
     elif value < mega:
-        return '{:.1f}K'.format(value / kilo)
+        return '{0:.1f}K'.format(value / kilo)
     else:
-        return '{:.1f}M'.format(value / mega)
+        return '{0:.1f}M'.format(value / mega)
 
 
 def get_client_from_args(args):
     return redis.StrictRedis(
-        host=args['host'], port=args['port'], socket_timeout=1, socket_connect_timeout=1
+        host=args['host'], port=args['port'], password=args['auth'], socket_timeout=1, socket_connect_timeout=1
     )
 
 
@@ -71,7 +71,7 @@ def process_log(args, commands):
     elapsed = max(end - start, 1)
     total_commands = len(commands) - 1  # exclude OK preamble
 
-    print '\n{} commands in {:0.2f} seconds ({:0.2f} cmd/s)'.format(
+    print '\n{0} commands in {1:0.2f} seconds ({2:0.2f} cmd/s)'.format(
         total_commands, elapsed, total_commands / elapsed
     ),
 
@@ -86,22 +86,22 @@ def process_log(args, commands):
             command, key = split_result[3].strip('"').upper(), split_result[4].strip('"')
             results['0:key'][key] += 1
             results['1:command'][command] += 1
-            results['2:command and key']['{} {}'.format(command, key)] += 1
+            results['2:command and key']['{0} {1}'.format(command, key)] += 1
 
-    print 'across {} unique keys'.format(len(results['0:key']))
+    print 'across {0} unique keys'.format(len(results['0:key']))
 
     # output summaries
     for result_type, result_values in sorted(results.iteritems()):
         result_type_pretty = result_type.partition(':')[-1]
-        print '\n* top by {}\n'.format(result_type_pretty)
-        print '{:>10}  {:>10}  {:>5}  {}'.format('count', 'avg/s', '%', result_type_pretty)
+        print '\n* top by {0}\n'.format(result_type_pretty)
+        print '{0:>10}  {1:>10}  {2:>5}  {3}'.format('count', 'avg/s', '%', result_type_pretty)
         for key, value in sorted(
                 result_values.iteritems(), key=lambda item: item[1], reverse=True)[:args['summary_number']]:
-            print '{:>10}  {:>10.2f}  {:>5.1f}  {}'.format(value, value / elapsed, 100 * value / total_commands, key)
+            print '{0:>10}  {1:>10.2f}  {2:>5.1f}  {3}'.format(value, value / elapsed, 100 * value / total_commands, key)
 
     if args['estimate_throughput']:
         client = get_client_from_args(args)
-        print '\nEstimating throughput requirements for top {} keys...'.format(args['estimate_throughput_limit'])
+        print '\nEstimating throughput requirements for top {0} keys...'.format(args['estimate_throughput_limit'])
 
         overhead_bytes = 4  # estimate protocol overhead and help account for nil
         throughput_results = {}
@@ -124,15 +124,15 @@ def process_log(args, commands):
             print '  No values found, is the host and port correct for throughput estimation?'
         else:
             result_type_pretty = 'est. throughput'
-            print '* top by {}\n'.format(result_type_pretty)
-            print '{:>11}  {:>10}  {:>10}  {:>12}  {}'.format(
+            print '* top by {0}\n'.format(result_type_pretty)
+            print '{0:>11}  {1:>10}  {2:>10}  {3:>12}  {4}'.format(
                 'est. bytes', 'count', 'throughput', 'throughput/s', 'key', result_type_pretty
             )
             for key, value in sorted(
                     throughput_results.iteritems(), key=lambda item: item[1][0], reverse=True)[:args['summary_number']]:
                 total_throughput, estimated_size = value
                 count = results['0:key'][key]
-                print '{:>11}  {:>10}  {:>10}  {:>12}  {}'.format(
+                print '{0:>11}  {1:>10}  {2:>10}  {3:>12}  {4}'.format(
                     humanbytes(estimated_size, include_bytes=True),
                     count,
                     humanbytes(total_throughput),
@@ -163,6 +163,7 @@ if __name__ == '__main__':
     parser.add_argument('--help', '-?', action='store_true')
     parser.add_argument('--host', '-h', default='localhost')
     parser.add_argument('--port', '-p', type=int, default=6379)
+    parser.add_argument('--auth', '-a', default='')
     parser.add_argument('--estimate-throughput', '-e', action='store_true')
     parser.add_argument('--estimate-throughput-limit', '-l', type=int, default=1000)
     parser.add_argument('--input-file', '-i')
